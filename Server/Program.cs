@@ -16,6 +16,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDbContext<OCTOBEROracleContext>(options =>
     options.UseOracle(connectionString));
 
+builder.Services.AddMemoryCache();
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
