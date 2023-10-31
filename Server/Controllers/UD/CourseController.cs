@@ -21,7 +21,7 @@ namespace OCTOBER.Server.Controllers.UD
     [Route("api/[controller]")]
     [ApiController]
 
-    public class CourseController : BaseController
+    public class CourseController : BaseController, GenericRestController<CourseDTO>
     {
         public CourseController(OCTOBEROracleContext context,
             IHttpContextAccessor httpContextAccessor,
