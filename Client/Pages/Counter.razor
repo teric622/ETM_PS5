@@ -8,11 +8,11 @@
 
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
-@code {
-    private int currentCount = 0;
-
-    private void IncrementCount()
-    {
-        currentCount++;
-    }
-}
+<TelerikDropDownList Data="@lstCourse"
+@bind-Value="@SelectedCourse"
+                     TextField="@nameof(CourseDTO.Description)"
+                     ValueField="@nameof(CourseDTO.CourseNo)"
+                     DefaultText="Select a course..."
+                     Width="100%">
+</TelerikDropDownList>
+.
