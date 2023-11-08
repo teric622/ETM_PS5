@@ -8,6 +8,7 @@ namespace OCTOBER.EF.Models
 {
     [Table("COURSE")]
     [Index("Prerequisite", Name = "CRSE_CRSE_FK_I")]
+    [Index("CourseNo", Name = "CRSE_PK", IsUnique = true)]
     public partial class Course
     {
         public Course()
@@ -41,13 +42,23 @@ namespace OCTOBER.EF.Models
         public string ModifiedBy { get; set; } = null!;
         [Column("MODIFIED_DATE", TypeName = "DATE")]
         public DateTime ModifiedDate { get; set; }
+        [Key]
+        [Column("SCHOOL_ID")]
+        [Precision(8)]
+        public int SchoolId { get; set; }
+        [Column("PREREQUISITE_SCHOOL_ID")]
+        [Precision(8)]
+        public int? PrerequisiteSchoolId { get; set; }
 
-        [ForeignKey("Prerequisite")]
+        [ForeignKey("Prerequisite,PrerequisiteSchoolId")]
         [InverseProperty("InversePrerequisiteNavigation")]
         public virtual Course? PrerequisiteNavigation { get; set; }
+        [ForeignKey("SchoolId")]
+        [InverseProperty("Courses")]
+        public virtual School School { get; set; } = null!;
         [InverseProperty("PrerequisiteNavigation")]
         public virtual ICollection<Course> InversePrerequisiteNavigation { get; set; }
-        [InverseProperty("CourseNoNavigation")]
+        [InverseProperty("Course")]
         public virtual ICollection<Section> Sections { get; set; }
     }
 }

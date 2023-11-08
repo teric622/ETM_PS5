@@ -9,12 +9,14 @@ namespace OCTOBER.EF.Models
     [Table("SECTION")]
     [Index("CourseNo", Name = "SECT_CRSE_FK_I")]
     [Index("InstructorId", Name = "SECT_INST_FK_I")]
+    [Index("SectionId", Name = "SECT_PK", IsUnique = true)]
     [Index("SectionNo", "CourseNo", Name = "SECT_SECT2_UK", IsUnique = true)]
     public partial class Section
     {
         public Section()
         {
             Enrollments = new HashSet<Enrollment>();
+            GradeTypeWeights = new HashSet<GradeTypeWeight>();
         }
 
         [Key]
@@ -51,11 +53,23 @@ namespace OCTOBER.EF.Models
         public string ModifiedBy { get; set; } = null!;
         [Column("MODIFIED_DATE", TypeName = "DATE")]
         public DateTime ModifiedDate { get; set; }
+        [Key]
+        [Column("SCHOOL_ID")]
+        [Precision(8)]
+        public int SchoolId { get; set; }
 
-        [ForeignKey("CourseNo")]
+        [ForeignKey("CourseNo,SchoolId")]
         [InverseProperty("Sections")]
-        public virtual Course CourseNoNavigation { get; set; } = null!;
-        [InverseProperty("Section")]
+        public virtual Course Course { get; set; } = null!;
+        [ForeignKey("SchoolId,InstructorId")]
+        [InverseProperty("Sections")]
+        public virtual Instructor Instructor { get; set; } = null!;
+        [ForeignKey("SchoolId")]
+        [InverseProperty("Sections")]
+        public virtual School School { get; set; } = null!;
+        [InverseProperty("S")]
         public virtual ICollection<Enrollment> Enrollments { get; set; }
+        [InverseProperty("S")]
+        public virtual ICollection<GradeTypeWeight> GradeTypeWeights { get; set; }
     }
 }

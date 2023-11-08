@@ -6,20 +6,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace OCTOBER.EF.Models
 {
-    [Table("STUDENT")]
-    [Index("StudentId", Name = "STU_PK", IsUnique = true)]
-    [Index("Zip", Name = "STU_ZIP_FK_I")]
-    public partial class Student
+    [Table("INSTRUCTOR")]
+    public partial class Instructor
     {
-        public Student()
+        public Instructor()
         {
-            Enrollments = new HashSet<Enrollment>();
+            Sections = new HashSet<Section>();
         }
 
         [Key]
-        [Column("STUDENT_ID")]
+        [Column("SCHOOL_ID")]
         [Precision(8)]
-        public int StudentId { get; set; }
+        public int SchoolId { get; set; }
+        [Key]
+        [Column("INSTRUCTOR_ID")]
+        [Precision(8)]
+        public int InstructorId { get; set; }
         [Column("SALUTATION")]
         [StringLength(5)]
         [Unicode(false)]
@@ -27,7 +29,7 @@ namespace OCTOBER.EF.Models
         [Column("FIRST_NAME")]
         [StringLength(25)]
         [Unicode(false)]
-        public string? FirstName { get; set; }
+        public string FirstName { get; set; } = null!;
         [Column("LAST_NAME")]
         [StringLength(25)]
         [Unicode(false)]
@@ -35,7 +37,7 @@ namespace OCTOBER.EF.Models
         [Column("STREET_ADDRESS")]
         [StringLength(50)]
         [Unicode(false)]
-        public string? StreetAddress { get; set; }
+        public string StreetAddress { get; set; } = null!;
         [Column("ZIP")]
         [StringLength(5)]
         [Unicode(false)]
@@ -44,12 +46,6 @@ namespace OCTOBER.EF.Models
         [StringLength(15)]
         [Unicode(false)]
         public string? Phone { get; set; }
-        [Column("EMPLOYER")]
-        [StringLength(50)]
-        [Unicode(false)]
-        public string? Employer { get; set; }
-        [Column("REGISTRATION_DATE", TypeName = "DATE")]
-        public DateTime RegistrationDate { get; set; }
         [Column("CREATED_BY")]
         [StringLength(30)]
         [Unicode(false)]
@@ -62,15 +58,14 @@ namespace OCTOBER.EF.Models
         public string ModifiedBy { get; set; } = null!;
         [Column("MODIFIED_DATE", TypeName = "DATE")]
         public DateTime ModifiedDate { get; set; }
-        [Key]
-        [Column("SCHOOL_ID")]
-        [Precision(8)]
-        public int SchoolId { get; set; }
 
         [ForeignKey("SchoolId")]
-        [InverseProperty("Students")]
+        [InverseProperty("Instructors")]
         public virtual School School { get; set; } = null!;
-        [InverseProperty("SNavigation")]
-        public virtual ICollection<Enrollment> Enrollments { get; set; }
+        [ForeignKey("Zip")]
+        [InverseProperty("Instructors")]
+        public virtual Zipcode ZipNavigation { get; set; } = null!;
+        [InverseProperty("Instructor")]
+        public virtual ICollection<Section> Sections { get; set; }
     }
 }
