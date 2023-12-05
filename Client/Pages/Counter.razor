@@ -7,12 +7,10 @@
 <p role="status">Current count: @currentCount</p>
 
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
-
-<TelerikDropDownList Data="@lstCourse"
+< Data="@lstCourse"
 @bind-Value="@SelectedCourse"
                      TextField="@nameof(CourseDTO.Description)"
                      ValueField="@nameof(CourseDTO.CourseNo)"
                      DefaultText="Select a course..."
                      Width="100%">
-</TelerikDropDownList>
-.
+</>
