@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using OCTOBER.EF.Data;
@@ -6,39 +7,43 @@ using OCTOBER.EF.Models;
 using OCTOBER.Server.Controllers.Base;
 using OCTOBER.Shared.DTO;
 using System.Diagnostics;
-//using Telerik.Blazor.Components;
-//using Telerik.DataSource.Extensions;
-//using Telerik.SvgIcons;
+using static System.Collections.Specialized.BitVector32;
 
 namespace OCTOBER.Server.Controllers.UD
 {
-    //    public class SchoolController : BaseController, GenericRestController<SchoolDTO>
     [Route("api/[controller]")]
     [ApiController]
-    public class SectionController : BaseController, GenericRestController<SectionDTO>
+    public class GradeController : BaseController, GenericRestController<GradeDTO>
     {
-        public SectionController(OCTOBEROracleContext context,
+        public GradeController(OCTOBEROracleContext context,
             IHttpContextAccessor httpContextAccessor,
             IMemoryCache memoryCache)
         : base(context, httpContextAccessor)
         {
         }
 
-        //section has composite primary key
-        // sectionid, schoolid
+
+
+        //Grade has composite primary key
+        //schoolid, studentid, sectionid, gradetypecode, gradecodeoccurence
         [HttpDelete]
-        [Route("Delete/{SectionId}/{SchoolId}")]
-        public async Task<IActionResult> Delete(int SectionId, int SchoolId)
+        [Route("Delete/{SchoolId}/{StudentId}/{SectionId}/{GradeTypeCode}/{GradeCodeOccurrence}")]
+        public async Task<IActionResult> Delete(int SchoolId, int StudentId, int SectionId, string GradeTypeCode, int GradeCodeOccurrence)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Sections.Where(x => x.SectionId == SectionId && x.SchoolId == SchoolId).FirstOrDefaultAsync();
+                //Grade has composite primary key
+                //schoolid, studentid, sectionid, gradetypecode, gradecodeoccurence 
+                // these fields need to match something in db in order for it to be removed
+                var itm = await _context.Grades.Where(x => x.SectionId == SectionId && x.StudentId == StudentId
+                                                            && x.SchoolId == SchoolId && x.GradeTypeCode == GradeTypeCode
+                                                            && x.GradeCodeOccurrence == GradeCodeOccurrence).FirstOrDefaultAsync();
 
                 if (itm != null)
                 {
-                    _context.Sections.Remove(itm);
+                    _context.Grades.Remove(itm);
                 }
 
                 await _context.SaveChangesAsync();
@@ -67,20 +72,22 @@ namespace OCTOBER.Server.Controllers.UD
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var result = await _context.Sections.Select(sp => new SectionDTO
+                var result = await _context.Grades.Select(sp => new GradeDTO
                 {
+                    SchoolId = sp.SchoolId,
+                    StudentId = sp.StudentId,
                     SectionId = sp.SectionId,
-                    CourseNo = sp.CourseNo,
-                    StartDateTime = sp.StartDateTime,
-                    Location = sp.Location,
-                    InstructorId = sp.InstructorId,
-                    Capacity = sp.Capacity,
+                    GradeTypeCode = sp.GradeTypeCode,
+                    GradeCodeOccurrence = sp.GradeCodeOccurrence,
+                    NumericGrade = sp.NumericGrade,
+                    Comments = sp.Comments,
                     CreatedBy = sp.CreatedBy,
                     CreatedDate = sp.CreatedDate,
                     ModifiedBy = sp.ModifiedBy,
                     ModifiedDate = sp.ModifiedDate,
-                    SchoolId = sp.SchoolId,
+
                 })
+                    //tolistasync, since more than 1 hting being returned, fixed error
                 .ToListAsync();
                 await _context.Database.RollbackTransactionAsync();
                 return Ok(result);
@@ -88,38 +95,43 @@ namespace OCTOBER.Server.Controllers.UD
             catch (Exception Dex)
             {
                 await _context.Database.RollbackTransactionAsync();
-                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+            
                 return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
             }
         }
 
 
-        //section has composite primary key
-        // sectionid, schoolid
+        //Grade has composite primary key
+        //schoolid, studentid, sectionid, gradetypecode, gradecodeoccurence
+
         [HttpGet]
-        [Route("Get/{SectionId}/{SchoolId}")]
-        public async Task<IActionResult> Get(int SectionId, int SchoolId)
+        [Route("Get/{SchoolId}/{StudentId}/{SectionId}/{GradeTypeCode}/{GradeCodeOccurrence}")]
+        public async Task<IActionResult> Get(int SchoolId, int StudentId, int SectionId, string GradeTypeCode, int GradeCodeOccurrence)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                SectionDTO? result = await _context
-                    .Sections
-                    .Where(x => x.SectionId == SectionId && x.SchoolId == SchoolId)
-                     .Select(sp => new SectionDTO
+                //Grade has composite primary key
+                //schoolid, studentid, sectionid, gradetypecode, gradecodeoccurence need to match for get request
+                GradeDTO? result = await _context
+                    .Grades
+                    .Where(x => x.SectionId == SectionId && x.StudentId == StudentId
+                                                            && x.SchoolId == SchoolId && x.GradeTypeCode == GradeTypeCode
+                                                            && x.GradeCodeOccurrence == GradeCodeOccurrence)
+                     .Select(sp => new GradeDTO
                      {
+                         SchoolId = sp.SchoolId,
+                         StudentId = sp.StudentId,
                          SectionId = sp.SectionId,
-                         CourseNo = sp.CourseNo,
-                         StartDateTime = sp.StartDateTime,
-                         Location = sp.Location,
-                         InstructorId = sp.InstructorId,
-                         Capacity = sp.Capacity,
+                         GradeTypeCode = sp.GradeTypeCode,
+                         GradeCodeOccurrence = sp.GradeCodeOccurrence,
+                         NumericGrade = sp.NumericGrade,
+                         Comments = sp.Comments,
                          CreatedBy = sp.CreatedBy,
                          CreatedDate = sp.CreatedDate,
                          ModifiedBy = sp.ModifiedBy,
                          ModifiedDate = sp.ModifiedDate,
-                         SchoolId = sp.SchoolId,
                      })
                 .SingleOrDefaultAsync();
 
@@ -141,37 +153,34 @@ namespace OCTOBER.Server.Controllers.UD
 
         [HttpPost]
         [Route("Post")]
+
+        //Grade has composite primary key
+        //schoolid, studentid, sectionid, gradetypecode, gradecodeoccurence
         public async Task<IActionResult> Post([FromBody]
-                                                SectionDTO _SectionDTO)
+                                                GradeDTO _GradeDTO)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Sections.Where(x => x.SectionId == _SectionDTO.SectionId && x.SchoolId == _SectionDTO.SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.Grades.Where(x => x.SectionId == _GradeDTO.SectionId && x.StudentId == _GradeDTO.StudentId
+                                                            && x.SchoolId == _GradeDTO.SchoolId && x.GradeTypeCode == _GradeDTO.GradeTypeCode
+                                                            && x.GradeCodeOccurrence == _GradeDTO.GradeCodeOccurrence).FirstOrDefaultAsync();
                 if (itm == null)
                 {
-                    Section s = new Section
+                    //schoolid, studentid, sectionid, gradetypecode, gradecodeoccurence are a must for new occurence
+                    // would make sense for numericGrade to be needed, comments arnt requried
+                    Grade g = new Grade
                     {
-                        //sectionid and schoolid needed for new instance
-                        // would also make sense for a course to come with
-                        // the number, time itlle start, location, instructorid and capacity
-                        SectionId = _SectionDTO.SectionId,
-                        CourseNo = _SectionDTO.CourseNo,
-                        StartDateTime = _SectionDTO.StartDateTime,
-                        Location = _SectionDTO.Location,
-                        InstructorId = _SectionDTO.InstructorId,
-                        Capacity = _SectionDTO.Capacity,
-                        SchoolId = _SectionDTO.SchoolId,
-
-
-                       // SectionId = _SectionDTO.SectionId,
-                       // CourseNo = _SectionDTO.CourseNo,
-                       // SectionNo = _SectionDTO.SectionNo,
-                      //  InstructorId = _SectionDTO.InstructorId,
-                      //  SchoolId = _SectionDTO.SchoolId,
+                        SchoolId = _GradeDTO.SchoolId,
+                        StudentId = _GradeDTO.StudentId,
+                        SectionId = _GradeDTO.SectionId,
+                        GradeTypeCode = _GradeDTO.GradeTypeCode,
+                        GradeCodeOccurrence = _GradeDTO.GradeCodeOccurrence,
+                        NumericGrade = _GradeDTO.NumericGrade,
+ 
                     };
-                    _context.Sections.Add(s);
+                    _context.Grades.Add(g);
                     await _context.SaveChangesAsync();
                     await _context.Database.CommitTransactionAsync();
                 }
@@ -188,25 +197,20 @@ namespace OCTOBER.Server.Controllers.UD
         [HttpPut]
         [Route("Put")]
         public async Task<IActionResult> Put([FromBody]
-                                                SectionDTO _SectionDTO)
+                                                GradeDTO _GradeDTO)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Sections.Where(x => x.SectionId == _SectionDTO.SchoolId && x.SchoolId == _SectionDTO.SchoolId).FirstOrDefaultAsync();
-
+                var itm = await _context.Grades.Where(x => x.SectionId == _GradeDTO.SectionId && x.StudentId == _GradeDTO.StudentId && x.SchoolId == _GradeDTO.SchoolId).FirstOrDefaultAsync();
+                //user should only be able to modify the numergrafe or comments,
+                // shouldnt be able to modify any of the primary key objs
                 if (itm != null)
                 {
-
-                    //user shouldnt be able to modify any columns related to the primary key,
-                    //all others are good
-                    itm.CourseNo = _SectionDTO.CourseNo;
-                    itm.StartDateTime = _SectionDTO.StartDateTime;
-                    itm.Location = _SectionDTO.Location;
-                    itm.InstructorId = _SectionDTO.InstructorId;
-                    itm.Capacity = _SectionDTO.Capacity;
-                    _context.Sections.Update(itm);
+                    itm.NumericGrade = _GradeDTO.NumericGrade;
+                    itm.Comments = _GradeDTO.Comments;
+                    _context.Grades.Update(itm);
                 }
 
                 await _context.SaveChangesAsync();
