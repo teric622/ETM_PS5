@@ -11,34 +11,40 @@ using static System.Collections.Specialized.BitVector32;
 //using Telerik.DataSource.Extensions;
 //using Telerik.SvgIcons;
 
+
+
 namespace OCTOBER.Server.Controllers.UD
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EnrollmentController : BaseController, GenericRestController<EnrollmentDTO>
+    public class GradeTypeWeightController : BaseController, GenericRestController<GradeTypeWeightDTO>
     {
-        public EnrollmentController(OCTOBEROracleContext context,
+        public GradeTypeWeightController(OCTOBEROracleContext context,
             IHttpContextAccessor httpContextAccessor,
             IMemoryCache memoryCache)
         : base(context, httpContextAccessor)
         {
         }
-        //Enrollment has composite primary key
-        //sectionId, StudentID, schoolid
+
+
+        //GradeTypeWeight
+        //has composite primary key 
+        //schoolid,sectionid,gradetypecode
+
 
         [HttpDelete]
-        [Route("Delete/{SectionId}/{StudentId}/{SchoolId}")]
-        public async Task<IActionResult> Delete(int SectionId, int SchoolId, int StudentId)
+        [Route("Delete/{SchoolId}/{SectionId}/{GradeTypeCode}")]
+        public async Task<IActionResult> Delete(int SchoolId, int SectionId, string GradeTypeCode)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Enrollments.Where(x => x.SectionId == SectionId && x.StudentId == StudentId && x.SchoolId == SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.GradeTypeWeights.Where(x => x.SchoolId == SchoolId && x.SectionId == SectionId && x.GradeTypeCode == GradeTypeCode).FirstOrDefaultAsync();
 
                 if (itm != null)
                 {
-                    _context.Enrollments.Remove(itm);
+                    _context.GradeTypeWeights.Remove(itm);
                 }
 
                 await _context.SaveChangesAsync();
@@ -67,17 +73,18 @@ namespace OCTOBER.Server.Controllers.UD
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var result = await _context.Enrollments.Select(sp => new EnrollmentDTO
+                var result = await _context.GradeTypeWeights.Select(sp => new GradeTypeWeightDTO
                 {
-                    StudentId = sp.StudentId,
+                    SchoolId = sp.SchoolId,
                     SectionId = sp.SectionId,
-                    EnrollDate = sp.EnrollDate,
-                    FinalGrade = sp.FinalGrade,
+                    GradeTypeCode = sp.GradeTypeCode,
+                    NumberPerSection = sp.NumberPerSection,
+                    PercentOfFinalGrade = sp.PercentOfFinalGrade,
+                    DropLowest = sp.DropLowest,
                     CreatedBy = sp.CreatedBy,
                     CreatedDate = sp.CreatedDate,
                     ModifiedBy = sp.ModifiedBy,
-                    ModifiedDate = sp.ModifiedDate,
-                    SchoolId = sp.SchoolId
+                    ModifiedDate = sp.ModifiedDate
                 })
                 .ToListAsync();
                 await _context.Database.RollbackTransactionAsync();
@@ -90,31 +97,34 @@ namespace OCTOBER.Server.Controllers.UD
                 return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
             }
         }
-        //Enrollment has composite primary key
-        //sectionId, StudentID, schoolid
+
+        //GradeTypeWeight
+        //has composite primary key 
+        //schoolid,sectionid,gradetypecode
 
         [HttpGet]
-        [Route("Get/{SectionId}/{StudentId}/{SchoolId}")]
-        public async Task<IActionResult> Get(int SectionId, int StudentId, int SchoolId)
+        [Route("Get/{SchoolId}/{SectionId}/{GradeTypeCode}")]
+        public async Task<IActionResult> Get(int SchoolId, int SectionId, string GradeTypeCode)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                EnrollmentDTO? result = await _context
-                    .Enrollments
-                    .Where(x => x.SectionId == SectionId && x.StudentId == StudentId && x.SchoolId == SchoolId)
-                     .Select(sp => new EnrollmentDTO
+                GradeTypeWeightDTO? result = await _context
+                    .GradeTypeWeights
+                    .Where(x => x.SchoolId == SchoolId && x.SectionId == SectionId && x.GradeTypeCode == GradeTypeCode)
+                     .Select(sp => new GradeTypeWeightDTO
                      {
-                         StudentId = sp.StudentId,
+                         SchoolId = sp.SchoolId,
                          SectionId = sp.SectionId,
-                         EnrollDate = sp.EnrollDate,
-                         FinalGrade = sp.FinalGrade,
+                         GradeTypeCode = sp.GradeTypeCode,
+                         NumberPerSection = sp.NumberPerSection,
+                         PercentOfFinalGrade = sp.PercentOfFinalGrade,
+                         DropLowest = sp.DropLowest,
                          CreatedBy = sp.CreatedBy,
                          CreatedDate = sp.CreatedDate,
                          ModifiedBy = sp.ModifiedBy,
-                         ModifiedDate = sp.ModifiedDate,
-                         SchoolId = sp.SchoolId
+                         ModifiedDate = sp.ModifiedDate
                      })
                 .SingleOrDefaultAsync();
 
@@ -137,29 +147,28 @@ namespace OCTOBER.Server.Controllers.UD
         [HttpPost]
         [Route("Post")]
         public async Task<IActionResult> Post([FromBody]
-                                                EnrollmentDTO _EnrollmentDTO)
+                                                GradeTypeWeightDTO _GradeTypeWeightDTO)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Enrollments.Where(x => x.SectionId == _EnrollmentDTO.SectionId && x.StudentId == _EnrollmentDTO.StudentId && x.SchoolId == _EnrollmentDTO.SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.GradeTypeWeights.Where(x => x.SchoolId == _GradeTypeWeightDTO.SchoolId && x.SectionId == _GradeTypeWeightDTO.SectionId && x.GradeTypeCode == _GradeTypeWeightDTO.GradeTypeCode).FirstOrDefaultAsync();
 
                 if (itm == null)
                 {
-                    Enrollment e = new Enrollment
+                    //schoolid,sectionid,gradetypecode are requried bc of primary key composite
+                    //all fields except the ones made by triggers as well
+                    GradeTypeWeight g = new GradeTypeWeight
                     {
-                        //Enrollment has composite primary key
-                        //sectionId, StudentID, schoolid are requried for new Enrollment instance
-                        //ENROLLDATE SHOULD BE REQ NOT NULL CONSTR, 
-                        
-                        StudentId = _EnrollmentDTO.StudentId,
-                        SectionId = _EnrollmentDTO.SectionId,
-                        EnrollDate = _EnrollmentDTO.EnrollDate,
-                        FinalGrade = _EnrollmentDTO.FinalGrade,
-                        SchoolId = _EnrollmentDTO.SchoolId
+                        SchoolId = _GradeTypeWeightDTO.SchoolId,
+                        SectionId = _GradeTypeWeightDTO.SectionId,
+                        GradeTypeCode = _GradeTypeWeightDTO.GradeTypeCode,
+                        NumberPerSection = _GradeTypeWeightDTO.NumberPerSection,
+                        PercentOfFinalGrade = _GradeTypeWeightDTO.PercentOfFinalGrade,
+                        DropLowest = _GradeTypeWeightDTO.DropLowest,
                     };
-                    _context.Enrollments.Add(e);
+                    _context.GradeTypeWeights.Add(g);
                     await _context.SaveChangesAsync();
                     await _context.Database.CommitTransactionAsync();
                 }
@@ -176,22 +185,23 @@ namespace OCTOBER.Server.Controllers.UD
         [HttpPut]
         [Route("Put")]
         public async Task<IActionResult> Put([FromBody]
-                                                Enrollment _EnrollmentDTO)
+                                                GradeTypeWeightDTO _GradeTypeWeightDTO)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                //Enrollment has composite primary key
-                //sectionId, StudentID, schoolid are requried for lookup,
-                // user should only be able to modify enroll date and final grade
-                var itm = await _context.Enrollments.Where(x => x.SectionId == _EnrollmentDTO.SectionId && x.StudentId == _EnrollmentDTO.StudentId && x.SchoolId == _EnrollmentDTO.SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.GradeTypeWeights.Where(x => x.SchoolId == _GradeTypeWeightDTO.SchoolId && x.SectionId == _GradeTypeWeightDTO.SectionId && x.GradeTypeCode == _GradeTypeWeightDTO.GradeTypeCode).FirstOrDefaultAsync();
 
                 if (itm != null)
                 {
-                    itm.EnrollDate = _EnrollmentDTO.EnrollDate;
-                    itm.FinalGrade = _EnrollmentDTO.FinalGrade;
-                    _context.Enrollments.Update(itm);
+                    //user shouldnt be able to edit any of th eprimar composite ket fields,
+                    //all others okay
+
+                    itm.NumberPerSection = _GradeTypeWeightDTO.NumberPerSection;
+                    itm.PercentOfFinalGrade = _GradeTypeWeightDTO.PercentOfFinalGrade;
+                    itm.DropLowest = _GradeTypeWeightDTO.DropLowest;
+                    _context.GradeTypeWeights.Update(itm);
                 }
 
                 await _context.SaveChangesAsync();
@@ -202,14 +212,9 @@ namespace OCTOBER.Server.Controllers.UD
             catch (Exception Dex)
             {
                 await _context.Database.RollbackTransactionAsync();
-              
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
                 return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
             }
-        }
-
-        public Task<IActionResult> Put([FromBody] EnrollmentDTO _T)
-        {
-            throw new NotImplementedException();
         }
     }
 }

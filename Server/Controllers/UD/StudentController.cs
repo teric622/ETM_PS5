@@ -7,38 +7,39 @@ using OCTOBER.Server.Controllers.Base;
 using OCTOBER.Shared.DTO;
 using System.Diagnostics;
 using static System.Collections.Specialized.BitVector32;
-//using Telerik.Blazor.Components;
-//using Telerik.DataSource.Extensions;
-//using Telerik.SvgIcons;
+
+
 
 namespace OCTOBER.Server.Controllers.UD
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EnrollmentController : BaseController, GenericRestController<EnrollmentDTO>
+
+    public class StudentController : BaseController, GenericRestController<StudentDTO>
     {
-        public EnrollmentController(OCTOBEROracleContext context,
+        public StudentController(OCTOBEROracleContext context,
             IHttpContextAccessor httpContextAccessor,
             IMemoryCache memoryCache)
         : base(context, httpContextAccessor)
         {
         }
-        //Enrollment has composite primary key
-        //sectionId, StudentID, schoolid
 
+
+        //student tbale has composite primary key
+        //studentid, schoolid
         [HttpDelete]
-        [Route("Delete/{SectionId}/{StudentId}/{SchoolId}")]
-        public async Task<IActionResult> Delete(int SectionId, int SchoolId, int StudentId)
+        [Route("Delete/{StudentId}/{SchoolId}")]
+        public async Task<IActionResult> Delete(int StudentId, int SchoolId)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Enrollments.Where(x => x.SectionId == SectionId && x.StudentId == StudentId && x.SchoolId == SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.Students.Where(x => x.StudentId == StudentId && x.SchoolId == SchoolId).FirstOrDefaultAsync();
 
                 if (itm != null)
                 {
-                    _context.Enrollments.Remove(itm);
+                    _context.Students.Remove(itm);
                 }
 
                 await _context.SaveChangesAsync();
@@ -67,17 +68,22 @@ namespace OCTOBER.Server.Controllers.UD
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var result = await _context.Enrollments.Select(sp => new EnrollmentDTO
+                var result = await _context.Students.Select(sp => new StudentDTO
                 {
                     StudentId = sp.StudentId,
-                    SectionId = sp.SectionId,
-                    EnrollDate = sp.EnrollDate,
-                    FinalGrade = sp.FinalGrade,
+                    Salutation = sp.Salutation,
+                    FirstName = sp.FirstName,
+                    LastName = sp.LastName,
+                    Employer = sp.Employer,
+                    RegistrationDate = sp.RegistrationDate,
+                    StreetAddress = sp.StreetAddress,
+                    Zip = sp.Zip,
+                    Phone = sp.Phone,
                     CreatedBy = sp.CreatedBy,
                     CreatedDate = sp.CreatedDate,
                     ModifiedBy = sp.ModifiedBy,
                     ModifiedDate = sp.ModifiedDate,
-                    SchoolId = sp.SchoolId
+                    SchoolId = sp.SchoolId,
                 })
                 .ToListAsync();
                 await _context.Database.RollbackTransactionAsync();
@@ -90,31 +96,37 @@ namespace OCTOBER.Server.Controllers.UD
                 return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
             }
         }
-        //Enrollment has composite primary key
-        //sectionId, StudentID, schoolid
 
+
+        //student tbale has composite primary key
+        //studentid, schoolid
         [HttpGet]
-        [Route("Get/{SectionId}/{StudentId}/{SchoolId}")]
-        public async Task<IActionResult> Get(int SectionId, int StudentId, int SchoolId)
+        [Route("Get/{StudentId}/{SchoolId}")]
+        public async Task<IActionResult> Get(int StudentId, int SchoolId)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                EnrollmentDTO? result = await _context
-                    .Enrollments
-                    .Where(x => x.SectionId == SectionId && x.StudentId == StudentId && x.SchoolId == SchoolId)
-                     .Select(sp => new EnrollmentDTO
+                StudentDTO? result = await _context
+                    .Students
+                    .Where(x => x.StudentId == StudentId && x.SchoolId == SchoolId)
+                     .Select(sp => new StudentDTO
                      {
                          StudentId = sp.StudentId,
-                         SectionId = sp.SectionId,
-                         EnrollDate = sp.EnrollDate,
-                         FinalGrade = sp.FinalGrade,
+                         Salutation = sp.Salutation,
+                         FirstName = sp.FirstName,
+                         LastName = sp.LastName,
+                         StreetAddress = sp.StreetAddress,
+                         Zip = sp.Zip,
+                         Phone = sp.Phone,
+                         Employer = sp.Employer,
+                         RegistrationDate = sp.RegistrationDate,
                          CreatedBy = sp.CreatedBy,
                          CreatedDate = sp.CreatedDate,
                          ModifiedBy = sp.ModifiedBy,
                          ModifiedDate = sp.ModifiedDate,
-                         SchoolId = sp.SchoolId
+                         SchoolId = sp.SchoolId,
                      })
                 .SingleOrDefaultAsync();
 
@@ -137,29 +149,34 @@ namespace OCTOBER.Server.Controllers.UD
         [HttpPost]
         [Route("Post")]
         public async Task<IActionResult> Post([FromBody]
-                                                EnrollmentDTO _EnrollmentDTO)
+                                                StudentDTO _StudentDTO)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Enrollments.Where(x => x.SectionId == _EnrollmentDTO.SectionId && x.StudentId == _EnrollmentDTO.StudentId && x.SchoolId == _EnrollmentDTO.SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.Students.Where(x => x.StudentId == _StudentDTO.StudentId && x.SchoolId == _StudentDTO.SchoolId).FirstOrDefaultAsync();
 
                 if (itm == null)
                 {
-                    Enrollment e = new Enrollment
+                    
+                    //studentid, schoolid requried for composite primary key
+                    // fields would make sense all others not made by triggers to be needed
+                    // when new instance made
+                    Student s = new Student
                     {
-                        //Enrollment has composite primary key
-                        //sectionId, StudentID, schoolid are requried for new Enrollment instance
-                        //ENROLLDATE SHOULD BE REQ NOT NULL CONSTR, 
-                        
-                        StudentId = _EnrollmentDTO.StudentId,
-                        SectionId = _EnrollmentDTO.SectionId,
-                        EnrollDate = _EnrollmentDTO.EnrollDate,
-                        FinalGrade = _EnrollmentDTO.FinalGrade,
-                        SchoolId = _EnrollmentDTO.SchoolId
+                        StudentId = _StudentDTO.StudentId,
+                        Salutation = _StudentDTO.Salutation,
+                        FirstName = _StudentDTO.FirstName,
+                        Phone = _StudentDTO.Phone,
+                        Employer = _StudentDTO.Employer,
+                        LastName = _StudentDTO.LastName,
+                        StreetAddress = _StudentDTO.StreetAddress,
+                        Zip = _StudentDTO.Zip,
+                        RegistrationDate = _StudentDTO.RegistrationDate,
+                        SchoolId = _StudentDTO.SchoolId,
                     };
-                    _context.Enrollments.Add(e);
+                    _context.Students.Add(s);
                     await _context.SaveChangesAsync();
                     await _context.Database.CommitTransactionAsync();
                 }
@@ -168,7 +185,7 @@ namespace OCTOBER.Server.Controllers.UD
             catch (Exception Dex)
             {
                 await _context.Database.RollbackTransactionAsync();
-                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+
                 return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
             }
         }
@@ -176,22 +193,28 @@ namespace OCTOBER.Server.Controllers.UD
         [HttpPut]
         [Route("Put")]
         public async Task<IActionResult> Put([FromBody]
-                                                Enrollment _EnrollmentDTO)
+                                                StudentDTO _StudentDTO)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                //Enrollment has composite primary key
-                //sectionId, StudentID, schoolid are requried for lookup,
-                // user should only be able to modify enroll date and final grade
-                var itm = await _context.Enrollments.Where(x => x.SectionId == _EnrollmentDTO.SectionId && x.StudentId == _EnrollmentDTO.StudentId && x.SchoolId == _EnrollmentDTO.SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.Students.Where(x => x.StudentId == _StudentDTO.StudentId && x.SchoolId == _StudentDTO.SchoolId).FirstOrDefaultAsync();
 
+
+                //Only fields user shouldnt be able to edit are those correlated to the primary composit key
+                // and the ones made by triggers, all others are okay to edit or modify
                 if (itm != null)
                 {
-                    itm.EnrollDate = _EnrollmentDTO.EnrollDate;
-                    itm.FinalGrade = _EnrollmentDTO.FinalGrade;
-                    _context.Enrollments.Update(itm);
+                    itm.Salutation = _StudentDTO.Salutation;
+                    itm.FirstName = _StudentDTO.FirstName;
+                    itm.LastName = _StudentDTO.LastName;
+                    itm.StreetAddress = _StudentDTO.StreetAddress;
+                    itm.Zip = _StudentDTO.Zip;
+                    itm.Phone = _StudentDTO.Phone;
+                    itm.Employer = _StudentDTO.Employer;
+                    itm.RegistrationDate = _StudentDTO.RegistrationDate;
+                    _context.Students.Update(itm);
                 }
 
                 await _context.SaveChangesAsync();
@@ -202,14 +225,9 @@ namespace OCTOBER.Server.Controllers.UD
             catch (Exception Dex)
             {
                 await _context.Database.RollbackTransactionAsync();
-              
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
                 return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
             }
-        }
-
-        public Task<IActionResult> Put([FromBody] EnrollmentDTO _T)
-        {
-            throw new NotImplementedException();
         }
     }
 }

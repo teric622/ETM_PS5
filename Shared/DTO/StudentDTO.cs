@@ -44,5 +44,9 @@ namespace OCTOBER.Shared.DTO
         public string ModifiedBy { get; set; } = null!;
         public DateTime ModifiedDate { get; set; }
 
+        //modified, was missing schoolid field
+        [Precision(8)]
+        public int SchoolId { get; set; }
+
     }
 }
